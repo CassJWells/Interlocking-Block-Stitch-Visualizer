@@ -14,9 +14,11 @@ def is_hex_color(color):
 def generate_pattern():
     try:
         # Read user inputs
-        height = int(height_entry.get()) * 2
-        width = int(width_entry.get())
-        stitches = int(stitches_entry.get())
+        height = int(height_entry.get()) * 2 if height_entry.get().strip() else 40
+        width = int(width_entry.get()) if width_entry.get().strip() else 20
+        
+        # Default to 3 if the stitches field is empty
+        stitches = int(stitches_entry.get()) if stitches_entry.get().strip() else 3
 
         border_color_name = border_entry.get().strip()
         border_enabled = bool(border_color_name)
@@ -118,24 +120,30 @@ root.title("Pattern Generator")
 frame_left = tk.Frame(root, padx=20, pady=20)
 frame_left.pack(side=tk.LEFT, fill=tk.Y)
 
-# Arrange input fields properly
+# Height Box
 ttk.Label(frame_left, text="Height:").grid(row=0, column=0, sticky="w")
-height_entry = Entry(frame_left)
+height_entry = Entry(frame_left, fg="gray")
+height_entry.insert(0, "20")
 height_entry.grid(row=0, column=1)
 
+# Width Box
 ttk.Label(frame_left, text="Width:").grid(row=1, column=0, sticky="w")
-width_entry = Entry(frame_left)
+width_entry = Entry(frame_left, fg="gray")
+width_entry.insert(0, "20")
 width_entry.grid(row=1, column=1)
 
+# Stitches Box with default placeholder
 ttk.Label(frame_left, text="Stitches Wide:").grid(row=2, column=0, sticky="w")
-stitches_entry = Entry(frame_left)
+stitches_entry = Entry(frame_left, fg="gray")
+stitches_entry.insert(0, "3")
 stitches_entry.grid(row=2, column=1)
 
+# Border Box
 ttk.Label(frame_left, text="Border (leave blank for none):").grid(row=3, column=0, sticky="w")
 border_entry = Entry(frame_left)
 border_entry.grid(row=3, column=1)
 
-# Colors Section using LabelFrame
+# Colors Label Frame
 color_frame = LabelFrame(frame_left, text="Colors", padx=5, pady=5)
 color_frame.grid(row=4, column=0, columnspan=2, pady=5, sticky="ew")
 color_text = Text(color_frame, height=5, width=30, wrap=tk.WORD)
