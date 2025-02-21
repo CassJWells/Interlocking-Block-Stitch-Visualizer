@@ -11,15 +11,50 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 def is_hex_color(color):
     return re.fullmatch(r"#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})", color) is not None
 
+# Default values for input fields
+default_values = {
+    "height": "20",
+    "width": "20",
+    "stitches": "3"
+}
+
+# Function to clear placeholder text when user types
+def clear_placeholder(event, entry, key):
+    if entry.get() == default_values[key]:
+        entry.delete(0, tk.END)
+        entry.config(fg="black")  # Change text color to normal
+
+# Function to restore placeholder if left empty
+def restore_placeholder(event, entry, key):
+    if entry.get().strip() == "":
+        entry.insert(0, default_values[key])
+        entry.config(fg="gray")  # Make placeholder text gray
+
+# Function to get entry value or return default if empty
+def get_entry_value(entry, key):
+    value = entry.get().strip()
+    return int(value) if value.isdigit() else int(default_values[key])
+
+# Function to create an Entry with placeholder behavior
+def create_entry(label_text, key, row):
+    ttk.Label(top_frame, text=label_text).grid(row=row, column=0, sticky="w")
+    entry = Entry(top_frame, fg="gray")
+    entry.insert(0, default_values[key])
+    entry.grid(row=row, column=1)
+
+    # Bind events for placeholder handling
+    entry.bind("<FocusIn>", lambda event, e=entry, k=key: clear_placeholder(event, e, k))
+    entry.bind("<FocusOut>", lambda event, e=entry, k=key: restore_placeholder(event, e, k))
+
+    return entry
+
 # Function to generate and display the pattern
 def generate_pattern():
     try:
-        # Read user inputs
-        height = int(height_entry.get()) * 2 if height_entry.get().strip() else 40
-        width = int(width_entry.get()) if width_entry.get().strip() else 20
-        
-        # Default to 3 if the stitches field is empty
-        stitches = int(stitches_entry.get()) if stitches_entry.get().strip() else 3
+        # Get input values, use default if empty
+        height = get_entry_value(height_entry, "height") * 2
+        width = get_entry_value(width_entry, "width")
+        stitches = get_entry_value(stitches_entry, "stitches")
 
         border_color_name = border_entry.get().strip()
         border_enabled = bool(border_color_name)
@@ -102,7 +137,7 @@ def generate_pattern():
         plt.clf()
         plt.imshow(grid)
         plt.axis("off")
-        
+
         fig = plt.gcf()
         canvas = FigureCanvasTkAgg(fig, master=frame_right)
         canvas.draw()
@@ -112,8 +147,6 @@ def generate_pattern():
 
     except ValueError as e:
         status_label.config(text=f"Error: {e}", fg="red")
-
-import os  # For checking if file exists
 
 def import_pattern():
     try:
@@ -243,7 +276,7 @@ def export_pattern():
 
 # Create Tkinter window
 root = tk.Tk()
-root.title("Interlocking Block Stitich Visualizer (IBSV)")
+root.title("Interlocking Block Stitch Visualizer (IBSV)")
 
 # Left panel for inputs
 frame_left = tk.Frame(root, padx=20, pady=20)
@@ -253,23 +286,10 @@ frame_left.pack(side=tk.LEFT, fill=tk.Y)
 top_frame = tk.Frame(frame_left)
 top_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
 
-# Height Box
-ttk.Label(top_frame, text="Height:").grid(row=0, column=0, sticky="w")
-height_entry = Entry(top_frame, fg="gray")
-height_entry.insert(0, "20")
-height_entry.grid(row=0, column=1)
-
-# Width Box
-ttk.Label(top_frame, text="Width:").grid(row=1, column=0, sticky="w")
-width_entry = Entry(top_frame, fg="gray")
-width_entry.insert(0, "20")
-width_entry.grid(row=1, column=1)
-
-# Stitches Box with default placeholder
-ttk.Label(top_frame, text="Stitches Wide:").grid(row=2, column=0, sticky="w")
-stitches_entry = Entry(top_frame, fg="gray")
-stitches_entry.insert(0, "3")
-stitches_entry.grid(row=2, column=1)
+# Create height, width, and stitches fields with placeholders
+height_entry = create_entry("Height:", "height", 0)
+width_entry = create_entry("Width:", "width", 1)
+stitches_entry = create_entry("Stitches Wide:", "stitches", 2)
 
 # Border Box
 ttk.Label(top_frame, text="Border (leave blank for none):").grid(row=3, column=0, sticky="w")
