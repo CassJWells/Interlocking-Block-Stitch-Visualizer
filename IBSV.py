@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.colors as mcolors
 import re  # For hex color validation
 import tkinter as tk
+import os
 from tkinter import ttk, Canvas, Entry, Label, Button, Text, Frame, LabelFrame, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -112,6 +113,134 @@ def generate_pattern():
     except ValueError as e:
         status_label.config(text=f"Error: {e}", fg="red")
 
+import os  # For checking if file exists
+
+def import_pattern():
+    try:
+        # Check if format.txt exists
+        if not os.path.exists("format.txt"):
+            status_label.config(text="No format.txt file found!", fg="red")
+            return
+
+        # Read file content
+        with open("format.txt", "r") as file:
+            lines = file.readlines()
+
+        # Ensure file has at least 2 lines
+        if len(lines) < 2:
+            status_label.config(text="Invalid format.txt structure!", fg="red")
+            return
+
+        # Parse first line: height, width, stitches, border color (if any)
+        first_line = [x.strip() for x in lines[0].strip().split(",")]
+        if len(first_line) < 3:
+            status_label.config(text="Invalid format.txt structure!", fg="red")
+            return
+        
+        height, width, stitches = first_line[:3]
+        border_color = first_line[3] if len(first_line) > 3 else ""
+
+        # Strip spaces and ensure they are valid integers
+        if not height.isdigit() or not width.isdigit() or not stitches.isdigit():
+            status_label.config(text="Invalid height, width, or stitches in format.txt!", fg="red")
+            return
+
+        # Convert to integers after validation
+        height = int(height)
+        width = int(width)
+        stitches = int(stitches)
+
+        # Parse second line: colors
+        colors = [color.strip().lower() for color in lines[1].strip().split(",") if color.strip()]
+
+        # Validate colors: must have at least 2 and be valid
+        if len(colors) < 2:
+            status_label.config(text="At least two valid colors are required!", fg="red")
+            return
+        
+        for color in colors:
+            if not (is_hex_color(color) or color in mcolors.CSS4_COLORS):
+                status_label.config(text=f"Invalid color in format.txt: {color}", fg="red")
+                return
+
+        # Validate border color if provided
+        if border_color and not (is_hex_color(border_color) or border_color in mcolors.CSS4_COLORS):
+            status_label.config(text=f"Invalid border color in format.txt: {border_color}", fg="red")
+            return
+
+        # Load values into UI
+        height_entry.delete(0, tk.END)
+        height_entry.insert(0, str(height))
+
+        width_entry.delete(0, tk.END)
+        width_entry.insert(0, str(width))
+
+        stitches_entry.delete(0, tk.END)
+        stitches_entry.insert(0, str(stitches))
+
+        border_entry.delete(0, tk.END)
+        if border_color:
+            border_entry.insert(0, border_color)
+
+        color_text.delete("1.0", tk.END)
+        color_text.insert("1.0", ", ".join(colors))
+
+        # Show success message
+        status_label.config(text="Import successful!", fg="green")
+
+        # Generate pattern with loaded values
+        generate_pattern()
+
+    except Exception as e:
+        status_label.config(text=f"Import failed: {e}", fg="red")
+
+
+def export_pattern():
+    try:
+        # Extract values from input fields
+        height = height_entry.get().strip()
+        width = width_entry.get().strip()
+        stitches = stitches_entry.get().strip()
+        border_color = border_entry.get().strip()
+
+        # Get colors from the text box and clean input
+        colors = color_text.get("1.0", tk.END).strip().replace("\n", "").split(",")
+        colors = [color.strip().lower() for color in colors if color.strip()]  # Remove extra spaces
+
+        # Ensure required fields have values
+        if not height or not width or not stitches:
+            status_label.config(text="Height, Width, and Stitches are required!", fg="red")
+            return
+
+        # Validate colors: must have at least 2 and be valid
+        if len(colors) < 2:
+            status_label.config(text="At least two valid colors are required!", fg="red")
+            return
+        
+        for color in colors:
+            if not (is_hex_color(color) or color in mcolors.CSS4_COLORS):
+                status_label.config(text=f"Invalid color: {color}", fg="red")
+                return
+
+        # Validate border color if provided
+        if border_color and not (is_hex_color(border_color) or border_color in mcolors.CSS4_COLORS):
+            status_label.config(text=f"Invalid border color: {border_color}", fg="red")
+            return
+
+        # Format the content
+        border_value = border_color if border_color else ""  # If no border, keep it blank
+        formatted_data = f"{height}, {width}, {stitches}, {border_value}\n{', '.join(colors)}"
+
+        # Write to file
+        with open("format.txt", "w") as file:
+            file.write(formatted_data)
+
+        status_label.config(text="Export successful! Saved as format.txt", fg="green")
+
+    except Exception as e:
+        status_label.config(text=f"Export failed: {e}", fg="red")
+
+
 # Create Tkinter window
 root = tk.Tk()
 root.title("Interlocking Block Stitich Visualizer (IBSV)")
@@ -120,42 +249,58 @@ root.title("Interlocking Block Stitich Visualizer (IBSV)")
 frame_left = tk.Frame(root, padx=20, pady=20)
 frame_left.pack(side=tk.LEFT, fill=tk.Y)
 
+# Top section (2 columns)
+top_frame = tk.Frame(frame_left)
+top_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
+
 # Height Box
-ttk.Label(frame_left, text="Height:").grid(row=0, column=0, sticky="w")
-height_entry = Entry(frame_left, fg="gray")
+ttk.Label(top_frame, text="Height:").grid(row=0, column=0, sticky="w")
+height_entry = Entry(top_frame, fg="gray")
 height_entry.insert(0, "20")
 height_entry.grid(row=0, column=1)
 
 # Width Box
-ttk.Label(frame_left, text="Width:").grid(row=1, column=0, sticky="w")
-width_entry = Entry(frame_left, fg="gray")
+ttk.Label(top_frame, text="Width:").grid(row=1, column=0, sticky="w")
+width_entry = Entry(top_frame, fg="gray")
 width_entry.insert(0, "20")
 width_entry.grid(row=1, column=1)
 
 # Stitches Box with default placeholder
-ttk.Label(frame_left, text="Stitches Wide:").grid(row=2, column=0, sticky="w")
-stitches_entry = Entry(frame_left, fg="gray")
+ttk.Label(top_frame, text="Stitches Wide:").grid(row=2, column=0, sticky="w")
+stitches_entry = Entry(top_frame, fg="gray")
 stitches_entry.insert(0, "3")
 stitches_entry.grid(row=2, column=1)
 
 # Border Box
-ttk.Label(frame_left, text="Border (leave blank for none):").grid(row=3, column=0, sticky="w")
-border_entry = Entry(frame_left)
+ttk.Label(top_frame, text="Border (leave blank for none):").grid(row=3, column=0, sticky="w")
+border_entry = Entry(top_frame)
 border_entry.grid(row=3, column=1)
 
 # Colors Label Frame
-color_frame = LabelFrame(frame_left, text="Colors", padx=5, pady=5)
+color_frame = LabelFrame(top_frame, text="Colors", padx=5, pady=5)
 color_frame.grid(row=4, column=0, columnspan=2, pady=5, sticky="ew")
 color_text = Text(color_frame, height=5, width=30, wrap=tk.WORD)
 color_text.pack()
 
+# Bottom section (3 columns)
+bottom_frame = tk.Frame(frame_left)
+bottom_frame.grid(row=1, column=0, columnspan=2, pady=10)
+
+# Import button
+import_button = Button(bottom_frame, text="Import", command=import_pattern)
+import_button.grid(row=0, column=0, padx=5)
+
+# Export button
+export_button = Button(bottom_frame, text="Export", command=export_pattern)
+export_button.grid(row=0, column=1, padx=5)
+
 # Submit button
-submit_button = Button(frame_left, text="Generate Pattern", command=generate_pattern)
-submit_button.grid(row=5, column=0, columnspan=2, pady=10)
+submit_button = Button(bottom_frame, text="Generate Pattern", command=generate_pattern)
+submit_button.grid(row=0, column=2, padx=5)
 
 # Status label
 status_label = Label(frame_left, text="")
-status_label.grid(row=6, column=0, columnspan=2)
+status_label.grid(row=2, column=0, columnspan=2)
 
 # Right panel for image
 frame_right = tk.Frame(root, padx=20, pady=20)
