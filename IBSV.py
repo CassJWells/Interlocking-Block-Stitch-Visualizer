@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.colors as mcolors
 import re  # For hex color validation
 import tkinter as tk
-from tkinter import ttk, Canvas, Entry, Label, Button, Text, Frame, LabelFrame
+from tkinter import ttk, Canvas, Entry, Label, Button, Text, Frame, LabelFrame, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Function to check if a string is a hex color
@@ -114,7 +114,7 @@ def generate_pattern():
 
 # Create Tkinter window
 root = tk.Tk()
-root.title("Pattern Generator")
+root.title("Interlocking Block Stitich Visualizer (IBSV)")
 
 # Left panel for inputs
 frame_left = tk.Frame(root, padx=20, pady=20)
